@@ -3353,10 +3353,12 @@ class InstantiatedTemplateVisitor
     if (class_decl == nullptr) {
       // If the template specialization decl is not sugar for a class, we
       // expect it to be another kind of template decl, like a built-in.
-      // Also in some rare cases named_decl can be a record decl (e.g. when using
-      // the built-in __type_pack_element).
-      CHECK_(llvm::isa<clang::TemplateDecl>(named_decl) || llvm::isa<clang::RecordDecl>(named_decl))
-          << "TemplateSpecializationType has no decl of type TemplateDecl or RecordDecl?";
+      // Also in some rare cases named_decl can be a record decl (e.g. when
+      // using the built-in __type_pack_element).
+      CHECK_(llvm::isa<clang::TemplateDecl>(named_decl) ||
+             llvm::isa<clang::RecordDecl>(named_decl))
+          << "TemplateSpecializationType has no decl of type TemplateDecl or "
+             "RecordDecl?";
       return true;
     }
 
