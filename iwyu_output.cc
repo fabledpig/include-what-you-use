@@ -1055,11 +1055,27 @@ void ProcessForwardDeclare(OneUse* use,
   }
 
   // (A7) If --no_fwd_decls has been passed, recategorize as a full use unless
-  // the decl is in this file (in which case it must be a self-sufficient decl
-  // being used, so we can just let IWYU do its work).
-  if (!use->ignore_use() &&
-      GlobalFlags().no_fwd_decls &&
-      GetFileEntry(use->decl_loc()) != GetFileEntry(use->use_loc())) {
+  // there is a decl in this file before the use (in which case it must be a
+  // self-sufficient decl being used, so we can just let IWYU do its work).
+  if (!use->ignore_use() && GlobalFlags().no_fwd_decls) {
+    for (const Decl* curr_decl = use->decl(); curr_decl != nullptr;
+         curr_decl = curr_decl->getPreviousDecl()) {
+      if (IsBeforeInSameFile(curr_decl->getLocation(), use->use_loc()))
+        return;
+
+      // If a decl can be found in the translation unit before the use but not in
+      // this file, we set that better decl as the use's decl and suggest
+      // the header where it was found (and finally recategorize it as a full
+      // use).
+      if (IsBeforeInTranslationUnit(curr_decl->getLocation(), use->use_loc())) {
+        const NamedDecl* better_decl = DynCastFrom(curr_decl);
+        use->reset_decl(better_decl);
+        use->set_suggested_header(
+            ConvertToQuotedInclude(GetFilePath(curr_decl->getLocation())));
+        break;
+      }
+    }
+
     use->set_full_use();
   }
 }
